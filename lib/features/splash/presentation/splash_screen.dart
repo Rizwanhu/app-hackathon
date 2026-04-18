@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/auth/auth_scope.dart';
-import '../../../core/services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,12 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _routeNext() {
     if (!mounted) return;
-    if (!SupabaseService.isInitialized) {
-      context.go(authNotifier.isLoggedIn ? '/app/dashboard' : '/login');
-      return;
-    }
-    final isLoggedIn = SupabaseService.client.auth.currentSession != null;
-    context.go(isLoggedIn ? '/app/dashboard' : '/login');
+    context.go(authNotifier.isLoggedIn ? '/app/dashboard' : '/login');
   }
 
   @override

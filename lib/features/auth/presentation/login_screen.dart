@@ -14,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
 
@@ -25,16 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() {
-    final ok = Validators.isNonEmpty(_email.text) &&
-        Validators.isNonEmpty(_password.text);
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email + password.')),
-      );
-      return;
-    }
-
-    // Backend intentionally not implemented yet.
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     authNotifier.setMockLoggedIn(true);
     context.go('/app/dashboard');
   }
@@ -43,39 +35,50 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Login',
-      body: ListView(
-        children: [
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          children: [
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) {
+                final s = (v ?? '').trim();
+                if (!Validators.isEmail(s)) return 'Enter a valid email.';
+                return null;
+              },
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _password,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              border: OutlineInputBorder(),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) {
+                if (!Validators.isNonEmpty(v ?? '')) return 'Enter your password.';
+                return null;
+              },
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton(
-            onPressed: _login,
-            child: const Text('Log in'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextButton(
-            onPressed: () => context.go('/signup'),
-            child: const Text('No account? Sign up'),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: _login,
+              child: const Text('Log in'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: () => context.go('/signup'),
+              child: const Text('No account? Sign up'),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
