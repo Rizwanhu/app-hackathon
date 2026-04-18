@@ -1,16 +1,24 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'supabase_service.dart';
+
 class AuthService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient get _client {
+    if (!SupabaseService.isInitialized) {
+      throw StateError(
+        'Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env.',
+      );
+    }
+    return SupabaseService.client;
+  }
 
   /// Sign Up with Email, Password, and Username
   /// Ensure "Confirm Email" is OFF in Supabase Dashboard for direct login
   Future<AuthResponse> signUp(String email, String password, String username) async {
     try {
-      final response = await _supabase.auth.signUp(
+      final response = await _client.auth.signUp(
         email: email,
         password: password,
-        // metadata allows our SQL trigger to see the username
         data: {'username': username},
       );
       return response;
@@ -24,7 +32,7 @@ class AuthService {
   /// Login with Email and Password
   Future<AuthResponse> login(String email, String password) async {
     try {
-      final response = await _supabase.auth.signInWithPassword(
+      final response = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -37,9 +45,8 @@ class AuthService {
   }
 
   /// Sign Out
-  Future<void> signOut() async => await _supabase.auth.signOut();
+  Future<void> signOut() async => _client.auth.signOut();
 
-  /// Helpers
-  User? get currentUser => _supabase.auth.currentUser;
-  bool get isAuthenticated => _supabase.auth.currentSession != null;
+  User? get currentUser => _client.auth.currentUser;
+  bool get isAuthenticated => _client.auth.currentSession != null;
 }

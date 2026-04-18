@@ -4,6 +4,7 @@ import '../../dashboard/presentation/dashboard_screen.dart';
 import '../../ledger/presentation/ledger_screen.dart';
 import '../../ai_advisor/presentation/ai_advisor_screen.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/data/app_store_scope.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -15,6 +16,12 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => appStore.refresh());
+  }
 
   void _onPageChanged(int index) {
     setState(() => _currentIndex = index);

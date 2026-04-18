@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/profile_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../services/sme_app_services.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +14,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _profileService = ProfileService();
+  final _services = SmeAppServices.instance;
   final _usernameController = TextEditingController();
   String? _avatarUrl;
   String? _email;
@@ -55,23 +56,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         final File file = File(pickedFile.path);
         final String fileExt = pickedFile.path.split('.').last;
-        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+        final upload = await _services.storage.uploadAvatarFile(
+          file: file,
+          fileExtension: fileExt,
+        );
+        if (upload.isFailure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(upload.errorMessage ?? 'Upload failed'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+        final url = upload.dataOrNull!;
 
-        // 1. Upload the File object directly
-        await Supabase.instance.client.storage
-            .from('avatars')
-            .upload(fileName, file);
-
-        // 2. Generate the Public URL
-        final String url = Supabase.instance.client.storage
-            .from('avatars')
-            .getPublicUrl(fileName);
-
-        // 3. Save the URL to your profiles table
-        await _profileService.updateProfile(
-          username: _usernameController.text,
+        final saved = await _profileService.updateProfile(
+          username: _usernameController.text.trim(),
           avatarUrl: url,
         );
+        if (saved.isFailure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(saved.errorMessage ?? 'Could not save profile'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         setState(() => _avatarUrl = url);
         
@@ -144,21 +160,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         setState(() => _isLoading = true);
-                        try {
-                          await _profileService.updateProfile(username: _usernameController.text);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Profile Saved!')),
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Save Failed: $e'), backgroundColor: Colors.red),
-                            );
-                          }
-                        } finally {
-                          if (mounted) setState(() => _isLoading = false);
+                        final r = await _profileService.updateProfile(
+                          username: _usernameController.text.trim(),
+                        );
+                        if (!mounted) return;
+                        setState(() => _isLoading = false);
+                        if (r.isFailure) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(r.errorMessage ?? 'Save failed'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Profile Saved!')),
+                          );
                         }
                       },
                       child: const Text('Save Profile Changes'),

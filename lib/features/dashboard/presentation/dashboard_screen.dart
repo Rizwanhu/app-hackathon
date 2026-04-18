@@ -3,18 +3,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/data/app_store_scope.dart';
 import '../../../core/extensions/currency_extension.dart';
-import '../../../core/mock/mock_scope.dart';
-import '../../../core/mock/mock_store.dart';
-import '../../../shared/widgets/budget_progress_list.dart';
+import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/cash_position_card.dart';
-import '../../../shared/widgets/expense_category_chart.dart';
 import '../../../shared/widgets/flow_cash_chart.dart';
-import '../../../shared/widgets/insight_card.dart';
-import '../../../shared/widgets/summary_metrics_row.dart';
 import '../../ledger/widgets/add_transaction_sheet.dart';
 import '../../receivables/widgets/add_receivable_sheet.dart';
-import '../../../shared/widgets/app_scaffold.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -33,8 +28,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       showDragHandle: true,
       builder: (_) => AddTransactionSheet(initialType: initialType),
     );
-    if (tx == null) return;
-    mockStore.addTransaction(tx);
+    if (tx == null || !mounted) return;
+    final err = await appStore.addTransaction(tx);
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
   }
 
   Future<void> _openAddReceivable() async {
@@ -44,14 +43,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       showDragHandle: true,
       builder: (_) => const AddReceivableSheet(),
     );
-    if (r == null) return;
-    mockStore.addReceivable(r);
+    if (r == null || !mounted) return;
+    final err = await appStore.addReceivable(r);
     if (!mounted) return;
-    context.go('/app/receivables');
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
+    context.push('/app/dashboard/receivables');
   }
 
   void _showDayDrillDown(DateTime day) {
-    final items = mockStore.transactionsOnDay(day);
+    final items = appStore.transactionsOnDay(day);
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -133,50 +136,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-@override
-Widget build(BuildContext context) {
-  return AnimatedBuilder(
-    animation: mockStore,
-    builder: (context, _) {
-      final warn = mockStore.categoriesOverBudget80;
-      final bars = mockStore.chartBars(_period);
-      final spentMap = {
-        for (final k in mockStore.categoryBudgets.keys) k: mockStore.expenseThisMonthForCategory(k),
-      };
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: appStore,
+      builder: (context, _) {
+        final warn = appStore.categoriesOverBudget80;
+        final bars = appStore.chartBars(_period);
 
-      // USE A BASIC SCAFFOLD WITHOUT AN APPBAR
-      return Scaffold(
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _quickActions,
-          icon: const Icon(Icons.add),
-          label: const Text('Quick add'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16), // Add some padding
-          children: [
-            if (warn.isNotEmpty)
-              // ... your existing warning widget code
-            CashPositionCard(
-              netCash: mockStore.netCash,
-              trendPctVsLastMonth: mockStore.trendVsLastMonthPct,
-              currencyLabel: mockStore.profile.currency,
-            ),
-            const SizedBox(height: 16),
-            FlowCashChart(
-              period: _period,
-              onPeriodChanged: (p) => setState(() => _period = p),
-              bars: bars,
-              onBarSelected: (i) {
-                if (i < 0 || i >= bars.length) return;
-                _showDayDrillDown(bars[i].day);
-              },
-            ),
-            // ... add the rest of your dashboard widgets (charts, metrics, etc.) here
-            const SizedBox(height: 100), // Space for FAB
-          ],
-        ),
-      );
-    },
-  );
-}
+        return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _quickActions,
+            icon: const Icon(Icons.add),
+            label: const Text('Quick add'),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (appStore.lastError != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Material(
+                    color: Colors.orange.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(appStore.lastError!, style: const TextStyle(fontSize: 13)),
+                    ),
+                  ),
+                ),
+              if (warn.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Over 80% of budget: ${warn.join(', ')}',
+                    style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              CashPositionCard(
+                netCash: appStore.netCash,
+                trendPctVsLastMonth: appStore.trendVsLastMonthPct,
+                currencyLabel: appStore.profile.currency,
+              ),
+              const SizedBox(height: 16),
+              FlowCashChart(
+                period: _period,
+                onPeriodChanged: (p) => setState(() => _period = p),
+                bars: bars,
+                onBarSelected: (i) {
+                  if (i < 0 || i >= bars.length) return;
+                  _showDayDrillDown(bars[i].day);
+                },
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

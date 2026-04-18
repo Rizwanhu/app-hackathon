@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_spacing.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/models/finance_models.dart';
 
 class AddTransactionSheet extends StatefulWidget {
   final CashTransaction? existing;

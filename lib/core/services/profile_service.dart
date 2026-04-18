@@ -1,27 +1,45 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../data/api_result.dart';
+import '../../data/models/profile_model.dart';
+import '../../services/sme_app_services.dart';
+
+/// User profile + avatar flows; delegates to [SmeAppServices] repositories.
 class ProfileService {
-  final _supabase = Supabase.instance.client;
+  ProfileService({SmeAppServices? services})
+      : _services = services ?? SmeAppServices.instance;
 
-  User? get currentUser => _supabase.auth.currentUser;
+  final SmeAppServices _services;
 
-  Future<Map<String, dynamic>?> getProfile() async {
-    final user = currentUser;
-    if (user == null) return null;
-    return await _supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+  User? get currentUser => _services.profile.currentUser;
+
+  Future<ApiResult<ProfileModel?>> fetchProfile() => _services.profile.fetchProfile();
+
+  Future<ApiResult<ProfileModel>> saveProfile({
+    required String username,
+    String? avatarUrl,
+  }) {
+    return _services.profile.upsertProfile(username: username, avatarUrl: avatarUrl);
   }
 
-  Future<void> updateProfile({required String username, String? avatarUrl}) async {
-    final user = currentUser;
-    if (user == null) return;
+  /// Backward-compatible map shape for older UI code.
+  Future<Map<String, dynamic>?> getProfile() async {
+    final result = await fetchProfile();
+    if (result.isFailure || result.dataOrNull == null) return null;
+    final p = result.dataOrNull!;
+    return {
+      'id': p.id,
+      'username': p.username,
+      'avatar_url': p.avatarUrl,
+      'email': p.email,
+      'updated_at': p.updatedAt?.toIso8601String(),
+    };
+  }
 
-    // Use UPSERT: It inserts if missing, updates if exists.
-    await _supabase.from('profiles').upsert({
-      'id': user.id,
-      'username': username,
-      'email': user.email,
-      if (avatarUrl != null) 'avatar_url': avatarUrl,
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+  Future<ApiResult<ProfileModel>> updateProfile({
+    required String username,
+    String? avatarUrl,
+  }) {
+    return saveProfile(username: username, avatarUrl: avatarUrl);
   }
 }
