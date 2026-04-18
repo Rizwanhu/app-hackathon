@@ -30,6 +30,8 @@ dependencies:
   # --- Extra Tools for a Winning App ---
   intl: ^0.19.0            # Paison aur dates ko format karne ke liye
   fl_chart: ^0.68.0        # Khoobsurat graphs dikhane ke liye
+  pdf: ^3.12.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:
