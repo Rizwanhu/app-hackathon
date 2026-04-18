@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/auth/auth_scope.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -71,10 +72,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return AnimatedBuilder(
       animation: mockStore,
       builder: (context, _) {
+        final user = Supabase.instance.client.auth.currentUser;
         return AppScaffold(
           title: 'Settings',
           body: ListView(
             children: [
+              Text(
+                'Account',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user == null ? 'Not signed in' : 'Signed in',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(user?.email ?? '—'),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Password is not stored or shown for security.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (user?.email != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            await Clipboard.setData(ClipboardData(text: user!.email!));
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Email copied.')),
+                            );
+                          },
+                          icon: const Icon(Icons.copy),
+                          label: const Text('Copy email'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
               Text(
                 'Business profile',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -182,8 +226,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               OutlinedButton(
-                onPressed: () {
-                  authNotifier.setMockLoggedIn(false);
+                onPressed: () async {
+                  try {
+                    await Supabase.instance.client.auth.signOut();
+                  } catch (_) {
+                    // Fallback for UI-only / non-supabase runs.
+                    authNotifier.setMockLoggedIn(false);
+                  }
+                  if (!context.mounted) return;
                   context.go('/login');
                 },
                 child: const Text('Sign out'),
