@@ -15,37 +15,37 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _confirmPassword = TextEditingController();
+  final _username = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.expenseRed),
+  Future<void> _handleSignUp() async {
+  try {
+    final response = await _authService.signUp(
+      _email.text.trim(),
+      _password.text.trim(),
+      _username.text.trim(),
     );
+
+    // If confirmation is OFF, session will NOT be null
+    if (response.session != null && mounted) {
+      // Moves the user into the ShellRoute (Dashboard)
+      context.go('/app/dashboard');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created! Please log in.')),
+      );
+      context.go('/login');
+    }
+  } catch (e) {
+    _showError(e.toString());
   }
+}
 
-  Future<void> _signUp() async {
-    if (_email.text.isEmpty || _password.text.isEmpty) {
-      _showError('All fields are required.');
-      return;
-    }
-    if (_password.text != _confirmPassword.text) {
-      _showError('Passwords do not match.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signUp(_email.text, _password.text);
-      if (mounted) {
-        context.go('/app/dashboard');
-      }
-    } catch (e) {
-      _showError(e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.expenseRed),
+    );
   }
 
   @override
@@ -53,64 +53,37 @@ class _SignupScreenState extends State<SignupScreen> {
     return AppScaffold(
       title: 'Create Account',
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Start Managing Cash Flow',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                TextField(
-                  controller: _email,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                children: [
+                  const Text('Join FlowSense', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: AppSpacing.xl),
+                  TextField(
+                    controller: _username,
+                    decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person), border: OutlineInputBorder()),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _password,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _email,
+                    decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email), border: OutlineInputBorder()),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _confirmPassword,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: Icon(Icons.lock_reset),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _password,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock), border: OutlineInputBorder()),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                FilledButton(
-                  onPressed: _signUp,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(onPressed: _handleSignUp, child: const Text('Sign Up')),
                   ),
-                  child: const Text('Create Account'),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: const Text('Already have an account? Log In'),
-                ),
-              ],
+                  TextButton(onPressed: () => context.go('/login'), child: const Text('Have an account? Login')),
+                ],
+              ),
             ),
-          ),
     );
   }
 }
