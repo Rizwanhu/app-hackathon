@@ -2,8 +2,8 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_scope.dart';
 import '../../features/ai_advisor/presentation/ai_advisor_screen.dart';
-import '../../features/auth/presentation/login_screen.dart';
-import '../../features/auth/presentation/signup_screen.dart';
+import '../../core/auth/presentation/login_screen.dart';
+import '../../core/auth/presentation/signup_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/ledger/presentation/ledger_screen.dart';
 import '../../features/payables/presentation/payables_screen.dart';

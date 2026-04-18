@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/constants/app_colors.dart';
+import 'core/mock/mock_scope.dart';
 import 'core/router/app_router.dart';
 
 class FlowSenseApp extends StatelessWidget {
@@ -8,14 +9,29 @@ class FlowSenseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'FlowSense',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        scaffoldBackgroundColor: AppColors.background,
-        useMaterial3: true,
-      ),
-      routerConfig: appRouter,
+    return ListenableBuilder(
+      listenable: mockStore,
+      builder: (context, _) {
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'FlowSense',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+            scaffoldBackgroundColor: AppColors.background,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: Brightness.dark,
+            ),
+          ),
+          themeMode: mockStore.themeMode,
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }
