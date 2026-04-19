@@ -8,6 +8,7 @@ class AppScaffold extends StatelessWidget {
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
+  final bool usePadding;
 
   const AppScaffold({
     super.key,
@@ -15,11 +16,26 @@ class AppScaffold extends StatelessWidget {
     required this.body,
     this.actions,
     this.floatingActionButton,
+    this.usePadding = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final canPop = context.canPop();
+
+    final padded = usePadding
+        ? AnimatedPadding(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.only(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.sm,
+              bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.sm,
+            ),
+            child: body,
+          )
+        : body;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,17 +50,7 @@ class AppScaffold extends StatelessWidget {
               )
             : null,
       ),
-      body: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.only(
-          left: AppSpacing.md,
-          right: AppSpacing.md,
-          top: AppSpacing.sm,
-          bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.sm,
-        ),
-        child: body,
-      ),
+      body: padded,
       floatingActionButton: floatingActionButton,
     );
   }

@@ -20,58 +20,132 @@ class ForecastInlineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderLight),
+    return Container(
+      decoration: BoxDecoration(
+        // AI wali feel dene ke liye halka sa gradient
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withOpacity(0.05),
+            AppColors.surface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withOpacity(0.15)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- HEADER ---
             Row(
               children: [
-                const Icon(Icons.insights, color: AppColors.primary),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.timeline_rounded, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Cash forecast (demo)',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                  'Cash Forecast (AI Demo)',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                        letterSpacing: -0.5,
+                      ),
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.lg),
+            
+            // --- FORECAST ROWS ---
+            _buildRow('Next 7 Days', day7),
+            _buildRow('Next 14 Days', day14),
+            _buildRow('Next 30 Days', day30),
+            
             const SizedBox(height: AppSpacing.md),
-            _row('Day 7', day7),
-            _row('Day 14', day14),
-            _row('Day 30', day30),
-            const SizedBox(height: AppSpacing.sm),
-            if (riskNegative)
-              const Text(
-                'Risk: projected cash may dip negative — tighten collections.',
-                style: TextStyle(color: AppColors.expenseRed, fontWeight: FontWeight.w700),
-              )
-            else
-              const Text(
-                'Outlook: stable with current trends.',
-                style: TextStyle(color: AppColors.incomeGreen, fontWeight: FontWeight.w700),
+            
+            // --- SMART ALERT BOX ---
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: riskNegative 
+                    ? AppColors.expenseRed.withOpacity(0.1) 
+                    : AppColors.incomeGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: riskNegative 
+                      ? AppColors.expenseRed.withOpacity(0.3) 
+                      : AppColors.incomeGreen.withOpacity(0.3),
+                ),
               ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    riskNegative ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
+                    color: riskNegative ? AppColors.expenseRed : AppColors.incomeGreen,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      riskNegative
+                          ? 'Risk Alert: Projected cash may dip negative. Tighten collections immediately.'
+                          : 'Outlook Stable: Cash flow is projected to remain healthy.',
+                      style: TextStyle(
+                        color: riskNegative ? AppColors.expenseRed : AppColors.incomeGreen,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, double v) {
+  // Modern dotted line row design
+  Widget _buildRow(String label, double v) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Expanded(child: Text(label)),
+          Text(
+            label, 
+            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Flex(
+                    direction: Axis.horizontal,
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      (constraints.constrainWidth() / 6).floor(),
+                      (index) => Container(width: 3, height: 1.5, color: AppColors.borderLight),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
           Text(
             v.toPkr(),
-            style: const TextStyle(fontWeight: FontWeight.w900),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.textPrimary),
           ),
         ],
       ),

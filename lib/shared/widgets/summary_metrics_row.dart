@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/extensions/currency_extension.dart';
@@ -22,38 +21,41 @@ class SummaryMetricsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
-        final w = (c.maxWidth - AppSpacing.sm) / 2;
+        // Hum spacing ko thora behter manage kar rahe hain
+        final gap = AppSpacing.md;
+        final w = (c.maxWidth - gap) / 2;
+        
         return Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
+          spacing: gap,
+          runSpacing: gap,
           children: [
             _MetricTile(
               width: w,
-              label: 'Total sales',
+              label: 'Total Sales',
               value: totalSales.toPkr(),
               color: AppColors.incomeGreen,
-              icon: Icons.trending_up,
+              icon: Icons.trending_up_rounded,
             ),
             _MetricTile(
               width: w,
-              label: 'Total expenses',
+              label: 'Total Expenses',
               value: totalExpenses.toPkr(),
               color: AppColors.expenseRed,
-              icon: Icons.trending_down,
+              icon: Icons.trending_down_rounded,
             ),
             _MetricTile(
               width: w,
               label: 'Receivables',
               value: receivables.toPkr(),
               color: AppColors.infoBlue,
-              icon: Icons.people_alt,
+              icon: Icons.account_balance_wallet_rounded,
             ),
             _MetricTile(
               width: w,
               label: 'Payables',
               value: payables.toPkr(),
               color: AppColors.warningAmber,
-              icon: Icons.payments,
+              icon: Icons.outbond_rounded,
             ),
           ],
         );
@@ -79,46 +81,55 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: width,
-      child: Card(
-        elevation: 0,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.borderLight),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 18, color: color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-            ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

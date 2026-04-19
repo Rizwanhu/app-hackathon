@@ -21,10 +21,15 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   ChartPeriod _period = ChartPeriod.week;
 
+  // --- Logic remains identical to original ---
   Future<void> _openAddTx({TransactionType? initialType}) async {
     final tx = await showModalBottomSheet<CashTransaction>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (_) => AddTransactionSheet(initialType: initialType),
     );
@@ -32,7 +37,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final err = await appStore.addTransaction(tx);
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+      );
     }
   }
 
@@ -40,6 +47,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final r = await showModalBottomSheet<Receivable>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (_) => const AddReceivableSheet(),
     );
@@ -47,7 +58,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final err = await appStore.addReceivable(r);
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+      );
       return;
     }
     context.push('/app/dashboard/receivables');
@@ -57,35 +70,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final items = appStore.transactionsOnDay(day);
     showModalBottomSheet<void>(
       context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Transactions — ${day.toString().split(' ').first}',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                'Transactions — ${day.day}/${day.month}',
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
               ),
               const SizedBox(height: AppSpacing.md),
               if (items.isEmpty)
-                const Text('No transactions on this day.')
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('No transactions recorded.', textAlign: TextAlign.center),
+                )
               else
                 ...items.map(
-                  (t) => ListTile(
-                    leading: Icon(
-                      t.type == TransactionType.income ? Icons.south_west : Icons.north_east,
-                      color: t.type == TransactionType.income
-                          ? AppColors.incomeGreen
-                          : AppColors.expenseRed,
+                  (t) => Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    title: Text(t.contactName.isEmpty ? t.category : t.contactName),
-                    subtitle: Text(t.category),
-                    trailing: Text(
-                      '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toPkr()}',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: t.type == TransactionType.income
+                            ? AppColors.incomeGreen.withOpacity(0.1)
+                            : AppColors.expenseRed.withOpacity(0.1),
+                        child: Icon(
+                          t.type == TransactionType.income ? Icons.add_rounded : Icons.remove_rounded,
+                          color: t.type == TransactionType.income ? AppColors.incomeGreen : AppColors.expenseRed,
+                        ),
+                      ),
+                      title: Text(t.contactName.isEmpty ? t.category : t.contactName,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(t.category),
+                      trailing: Text(
+                        '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toPkr()}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: t.type == TransactionType.income ? AppColors.incomeGreen : AppColors.expenseRed,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -99,40 +136,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _quickActions() async {
     await showModalBottomSheet<void>(
       context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (ctx) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.add_shopping_cart),
-                title: const Text('Add sale'),
-                onTap: () {
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildActionTile(Icons.add_shopping_cart, 'Add Sale', AppColors.incomeGreen, () {
                   Navigator.pop(ctx);
                   _openAddTx(initialType: TransactionType.income);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long),
-                title: const Text('Add expense'),
-                onTap: () {
+                }),
+                _buildActionTile(Icons.receipt_long, 'Add Expense', AppColors.expenseRed, () {
                   Navigator.pop(ctx);
                   _openAddTx(initialType: TransactionType.expense);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_add_alt_1),
-                title: const Text('Add receivable'),
-                onTap: () {
+                }),
+                _buildActionTile(Icons.person_add_alt_1, 'Add Receivable', AppColors.primary, () {
                   Navigator.pop(ctx);
                   _openAddReceivable();
-                },
-              ),
-            ],
+                }),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActionTile(IconData icon, String title, Color color, VoidCallback onTap) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+      onTap: onTap,
     );
   }
 
@@ -145,6 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final bars = appStore.chartBars(_period);
 
         return Scaffold(
+          backgroundColor: AppColors.background,
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _quickActions,
             icon: const Icon(Icons.add_rounded),

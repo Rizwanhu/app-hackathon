@@ -20,39 +20,69 @@ class PayableTile extends StatelessWidget {
 
   Color _urgencyColor() {
     final d = p.daysToDue;
-    if (d <= 0) return AppColors.expenseRed;
-    if (d <= 7) return AppColors.warningAmber;
-    return AppColors.incomeGreen;
+    if (d <= 0) return AppColors.expenseRed; // Overdue or Due Today
+    if (d <= 7) return AppColors.warningAmber; // Due soon
+    return AppColors.incomeGreen; // Later
   }
 
   String _urgencyLabel() {
     final d = p.daysToDue;
     if (d < 0) return 'Overdue ${-d}d';
-    if (d == 0) return 'Due today';
+    if (d == 0) return 'Due Today';
     if (d <= 7) return 'Due in $d days';
     return 'Later';
+  }
+
+  IconData _urgencyIcon() {
+    final d = p.daysToDue;
+    if (d <= 0) return Icons.error_outline_rounded;
+    if (d <= 7) return Icons.schedule_rounded;
+    return Icons.check_circle_outline_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
     final c = _urgencyColor();
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: c.withValues(alpha: 0.35)),
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.withValues(alpha: 0.3)), // Border matches urgency
+        boxShadow: [
+          BoxShadow(
+            color: c.withValues(alpha: 0.05), // Subtle glow matching urgency
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- HEADER ---
             Row(
               children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.storefront_rounded, size: 18, color: AppColors.primary),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     p.vendorName,
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary),
                   ),
                 ),
                 Container(
@@ -61,42 +91,88 @@ class PayableTile extends StatelessWidget {
                     color: c.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(
-                    _urgencyLabel(),
-                    style: TextStyle(color: c, fontWeight: FontWeight.w900, fontSize: 11),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_urgencyIcon(), size: 12, color: c),
+                      const SizedBox(width: 4),
+                      Text(
+                        _urgencyLabel(),
+                        style: TextStyle(color: c, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.2),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              p.amount.toPkr(),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Due ${DateFormat.yMMMd().format(p.dueDate)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
             const SizedBox(height: AppSpacing.md),
+
+            // --- AMOUNTS & DATES ---
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Amount to Pay', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(
+                      p.amount.toPkr(),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5, color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('Due Date', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat.yMMMd().format(p.dueDate),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: AppColors.borderLight, height: 1),
+            ),
+
+            // --- ACTIONS ---
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
                     onPressed: onMarkPaid,
-                    child: const Text('Mark paid'),
+                    icon: const Icon(Icons.check_circle_rounded, size: 18),
+                    label: const Text('Mark as Paid'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.incomeGreen,
+                      side: const BorderSide(color: AppColors.incomeGreen),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Switch(
-                  value: p.reminderEnabled,
-                  onChanged: onReminderChanged,
+                const SizedBox(width: AppSpacing.md),
+                Row(
+                  children: [
+                    const Icon(Icons.notifications_active_rounded, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Transform.scale(
+                      scale: 0.85, // Switch ko thora neat rakhne ke liye
+                      child: Switch(
+                        value: p.reminderEnabled,
+                        onChanged: onReminderChanged,
+                        activeColor: AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-            Text(
-              'Local reminder (demo)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
           ],
         ),

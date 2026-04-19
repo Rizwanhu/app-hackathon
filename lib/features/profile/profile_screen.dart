@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/profile_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../services/sme_app_services.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Grab the email instantly from the active session
     final user = _profileService.currentUser;
     _email = user?.email;
     _loadUserData();
@@ -46,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- SIMPLE FILE METHOD (Like Hive Project) ---
   Future<void> _pickAndUploadImage(ImageSource source) async {
     final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 50);
@@ -65,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(upload.errorMessage ?? 'Upload failed'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.expenseRed,
               ),
             );
           }
@@ -82,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(saved.errorMessage ?? 'Could not save profile'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.expenseRed,
               ),
             );
           }
@@ -93,14 +92,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: AppColors.incomeGreen,
+            ),
           );
         }
       } catch (e) {
         debugPrint('Upload Error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload Failed: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Upload Failed: $e'), backgroundColor: AppColors.expenseRed),
           );
         }
       } finally {
@@ -116,9 +118,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My profile')),
       body: _isLoading && _email == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
                   Card(
@@ -214,21 +217,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showPickerOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.gallery); },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
-              onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.camera); },
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Wrap(
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text('Update Profile Picture', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                ),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.gallery); },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                ),
+                title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.camera); },
+              ),
+            ],
+          ),
         ),
       ),
     );

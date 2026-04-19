@@ -23,7 +23,14 @@ class FlowCashChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (bars.isEmpty) {
-      return const SizedBox.shrink();
+      return Container(
+        height: 200,
+        alignment: Alignment.center,
+        child: const Text(
+          'No data available for this period.',
+          style: TextStyle(color: AppColors.textMuted),
+        ),
+      );
     }
 
     final maxY = bars
@@ -35,26 +42,53 @@ class FlowCashChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Cash flow',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+              'Cash Flow',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
             ),
-            const Spacer(),
+            // Modernized Segmented Button
             SegmentedButton<ChartPeriod>(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                  (Set<MaterialState> states) {
+                    if (states.contains(MaterialState.selected)) {
+                      return AppColors.primary.withOpacity(0.1);
+                    }
+                    return AppColors.surface;
+                  },
+                ),
+                foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                  (Set<MaterialState> states) {
+                    if (states.contains(MaterialState.selected)) {
+                      return AppColors.primary;
+                    }
+                    return AppColors.textSecondary;
+                  },
+                ),
+                side: MaterialStateProperty.all(
+                  const BorderSide(color: AppColors.borderLight),
+                ),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              showSelectedIcon: false,
               segments: const [
-                ButtonSegment(value: ChartPeriod.week, label: Text('Week')),
-                ButtonSegment(value: ChartPeriod.month, label: Text('Month')),
-                ButtonSegment(value: ChartPeriod.quarter, label: Text('3 Mo')),
+                ButtonSegment(value: ChartPeriod.week, label: Text('Week', style: TextStyle(fontSize: 12))),
+                ButtonSegment(value: ChartPeriod.month, label: Text('Month', style: TextStyle(fontSize: 12))),
+                ButtonSegment(value: ChartPeriod.quarter, label: Text('3 Mo', style: TextStyle(fontSize: 12))),
               ],
               selected: {period},
               onSelectionChanged: (s) => onPeriodChanged(s.first),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
         SizedBox(
           height: 220,
           child: BarChart(
@@ -63,10 +97,11 @@ class FlowCashChart extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: capY / 4,
-                getDrawingHorizontalLine: (_) => FlLine(
+                horizontalInterval: capY > 0 ? capY / 4 : 250,
+                getDrawingHorizontalLine: (_) => const FlLine(
                   color: AppColors.borderLight,
                   strokeWidth: 1,
+                  dashArray: [5, 5], // Dotted lines for a cleaner look
                 ),
               ),
               titlesData: FlTitlesData(
@@ -75,17 +110,18 @@ class FlowCashChart extends StatelessWidget {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 36,
+                    reservedSize: 40, // Increased size for larger numbers
                     getTitlesWidget: (v, _) => Text(
                       _k(v),
-                      style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 28,
+                    reservedSize: 30,
                     interval: _labelInterval(bars.length),
                     getTitlesWidget: (v, meta) {
                       final i = v.toInt();
@@ -95,10 +131,11 @@ class FlowCashChart extends StatelessWidget {
                       }
                       final d = bars[i].day;
                       return Padding(
-                        padding: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           DateFormat.Md().format(d),
-                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                          style: const TextStyle(
+                              fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                         ),
                       );
                     },
@@ -110,33 +147,58 @@ class FlowCashChart extends StatelessWidget {
                 final b = bars[i];
                 return BarChartGroupData(
                   x: i,
+                  barsSpace: 4,
                   barRods: [
                     BarChartRodData(
                       toY: b.inflow,
-                      width: 6,
+                      width: 8, // Thicker bars
                       color: AppColors.incomeGreen,
                       borderRadius: BorderRadius.circular(4),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: capY,
+                        color: AppColors.surfaceSecondary, // Grey background for empty space
+                      ),
                     ),
                     BarChartRodData(
                       toY: b.outflow,
-                      width: 6,
+                      width: 8,
                       color: AppColors.expenseRed,
                       borderRadius: BorderRadius.circular(4),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: capY,
+                        color: AppColors.surfaceSecondary,
+                      ),
                     ),
                   ],
-                  barsSpace: 4,
                 );
               }),
               barTouchData: BarTouchData(
                 enabled: true,
                 touchTooltipData: BarTouchTooltipData(
+                  tooltipPadding: const EdgeInsets.all(8),
+                  tooltipMargin: 8,
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final b = bars[group.x.toInt()];
                     final label = rodIndex == 0 ? 'Inflow' : 'Outflow';
-                    final val = rodIndex == 0 ? b.inflow : b.outflow;
+                    final val = rodIndex == 0 ? bars[group.x.toInt()].inflow : bars[group.x.toInt()].outflow;
                     return BarTooltipItem(
-                      '$label\n${val.toStringAsFixed(0)}',
-                      const TextStyle(color: Colors.white, fontSize: 12),
+                      '$label\n',
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      children: [
+                        TextSpan(
+                          text: NumberFormat.currency(
+                            locale: 'en_PK',
+                            symbol: 'PKR ',
+                            decimalDigits: 0,
+                          ).format(val),
+                          style: TextStyle(
+                            color: rodIndex == 0 ? AppColors.incomeGreen : AppColors.expenseRed,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -150,11 +212,12 @@ class FlowCashChart extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center, // Centered legend
           children: [
             _LegendDot(color: AppColors.incomeGreen, label: 'Inflows'),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.xl),
             _LegendDot(color: AppColors.expenseRed, label: 'Outflows'),
           ],
         ),
@@ -163,21 +226,24 @@ class FlowCashChart extends StatelessWidget {
   }
 
   static String _k(double v) {
+    if (v == 0) return '0';
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)}k';
     return v.toStringAsFixed(0);
   }
 
   static double _labelInterval(int n) {
-    if (n <= 10) return 1;
-    if (n <= 30) return 3;
-    return 7;
+    if (n <= 7) return 1;
+    if (n <= 14) return 2;
+    if (n <= 31) return 5;
+    return 10;
   }
 
   static int _labelEvery(int n) {
-    if (n <= 10) return 1;
-    if (n <= 30) return 3;
-    return 7;
+    if (n <= 7) return 1;
+    if (n <= 14) return 2;
+    if (n <= 31) return 5;
+    return 10;
   }
 }
 
@@ -193,12 +259,15 @@ class _LegendDot extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 13),
+        ),
       ],
     );
   }

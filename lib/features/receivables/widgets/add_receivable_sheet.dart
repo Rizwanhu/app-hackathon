@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/models/finance_models.dart';
 
@@ -31,6 +33,18 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
       initialDate: _due,
       firstDate: DateTime(DateTime.now().year - 1),
       lastDate: DateTime(DateTime.now().year + 3),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) setState(() => _due = picked);
   }
@@ -40,7 +54,10 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
     final value = double.tryParse(raw);
     if (_name.text.trim().isEmpty || value == null || value <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter name and a valid amount.')),
+        const SnackBar(
+          content: Text('Please enter a valid name and amount.'),
+          backgroundColor: AppColors.expenseRed,
+        ),
       );
       return;
     }
@@ -51,7 +68,7 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
       amount: value,
       dueDate: _due,
       status: ReceivableStatus.pending,
-      riskScore: 55,
+      riskScore: 55, // Simulated risk score
       followUps: const [],
     );
     Navigator.of(context).pop(r);
@@ -60,33 +77,60 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
-    return Padding(
+    
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       padding: EdgeInsets.only(
         left: AppSpacing.lg,
         right: AppSpacing.lg,
+        top: AppSpacing.md,
         bottom: bottom + AppSpacing.lg,
       ),
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // --- HEADER ---
             Row(
               children: [
-                Text(
-                  'Add receivable',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
                 ),
-                const Spacer(),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Add Receivable',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
+
+            // --- INPUT FIELDS ---
             TextField(
               controller: _name,
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                labelText: 'Customer name',
-                border: OutlineInputBorder(),
+                labelText: 'Customer Name',
+                prefixIcon: Icon(Icons.person_outline_rounded),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -94,9 +138,9 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
               controller: _phone,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
-                labelText: 'WhatsApp number',
-                hintText: '92300xxxxxxx',
-                border: OutlineInputBorder(),
+                labelText: 'WhatsApp Number',
+                hintText: 'e.g. 923001234567',
+                prefixIcon: Icon(Icons.phone_android_rounded),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -105,18 +149,56 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
               decoration: const InputDecoration(
-                labelText: 'Amount owed (PKR)',
-                border: OutlineInputBorder(),
+                labelText: 'Amount Owed (PKR)',
+                prefixIcon: Icon(Icons.payments_outlined),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              onPressed: _pickDue,
-              icon: const Icon(Icons.event),
-              label: Text('Due date: ${_due.toString().split(' ').first}'),
+            
+            // --- DATE PICKER AS A FIELD ---
+            InkWell(
+              onTap: _pickDue,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.borderLight),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month_rounded, color: AppColors.textSecondary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Due Date', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            DateFormat.yMMMd().format(_due),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.edit_calendar_rounded, color: AppColors.primary, size: 20),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton(onPressed: _save, child: const Text('Save')),
+            const SizedBox(height: AppSpacing.xl),
+
+            // --- SAVE BUTTON ---
+            FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.check_circle_outline_rounded),
+              label: const Text('Save Receivable'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
           ],
         ),
       ),

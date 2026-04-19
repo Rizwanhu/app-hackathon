@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'core/constants/app_colors.dart';
 import 'core/data/app_store_scope.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';

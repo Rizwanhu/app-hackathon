@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
 import '../../../core/models/finance_models.dart';
@@ -15,6 +16,10 @@ class PayablesScreen extends StatelessWidget {
     final p = await showModalBottomSheet<Payable>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface, // Ensure surface color
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (_) => const AddPayableSheet(),
     );
@@ -22,7 +27,9 @@ class PayablesScreen extends StatelessWidget {
     final err = await appStore.addPayable(p);
     if (!context.mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+      );
     }
   }
 
@@ -35,9 +42,12 @@ class PayablesScreen extends StatelessWidget {
 
         return AppScaffold(
           title: 'Payables',
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openAdd(context),
-            child: const Icon(Icons.add_card_rounded),
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_card_rounded),
+            label: const Text('Add payable', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           body: list.isEmpty
               ? const EmptyState(
@@ -46,7 +56,8 @@ class PayablesScreen extends StatelessWidget {
                   subtitle: 'Tap + to track what you owe suppliers.',
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 88),
+                  padding: const EdgeInsets.only(bottom: 100), // Padding for FAB
+                  physics: const BouncingScrollPhysics(),
                   itemCount: list.length,
                   separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, i) {
@@ -57,7 +68,13 @@ class PayablesScreen extends StatelessWidget {
                         appStore.markPayablePaid(p.id).then((err) {
                           if (!context.mounted) return;
                           if (err != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+                            );
+                          } else {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Payment marked successfully!'), backgroundColor: AppColors.incomeGreen),
+                            );
                           }
                         });
                       },
@@ -67,9 +84,9 @@ class PayablesScreen extends StatelessWidget {
                         if (v && appStore.notificationsEnabled) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                'Reminder set for ${p.vendorName} (demo — no real push).',
-                              ),
+                              content: Text('Reminder set for ${p.vendorName}'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
                             ),
                           );
                         }

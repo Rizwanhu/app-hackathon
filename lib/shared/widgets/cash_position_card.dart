@@ -21,59 +21,112 @@ class CashPositionCard extends StatelessWidget {
     final positive = netCash >= 0;
     final trendUp = trendPctVsLastMonth >= 0;
 
-    return Card(
-      elevation: 0,
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderLight),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24), // Thora zyada round
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.04), // Halka sa green glow
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Net cash position',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: netCash),
-              duration: const Duration(milliseconds: 650),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, _) {
-                return Text(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Net Cash Position',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: netCash),
+            duration: const Duration(milliseconds: 800), // Thora slow for premium feel
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) {
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
                   value.toPkr(symbol: currencyLabel),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: positive ? AppColors.incomeGreen : AppColors.expenseRed,
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Icon(
-                  trendUp ? Icons.trending_up : Icons.trending_down,
-                  size: 18,
-                  color: trendUp ? AppColors.incomeGreen : AppColors.expenseRed,
+                  style: TextStyle(
+                    fontSize: 36, // Bara aur bold amount
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                    color: positive ? AppColors.textPrimary : AppColors.expenseRed,
+                  ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '${trendUp ? '+' : ''}${trendPctVsLastMonth.toStringAsFixed(1)}% vs last month',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              // Modern Pill for Trend
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: trendUp
+                      ? AppColors.incomeGreen.withOpacity(0.1)
+                      : AppColors.expenseRed.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-          ],
-        ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      trendUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                      size: 16,
+                      color: trendUp ? AppColors.incomeGreen : AppColors.expenseRed,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${trendUp ? '+' : ''}${trendPctVsLastMonth.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: trendUp ? AppColors.incomeGreen : AppColors.expenseRed,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'vs last month',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
