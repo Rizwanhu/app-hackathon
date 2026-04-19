@@ -108,7 +108,6 @@ class _AiAdvisorScreenState extends State<AiAdvisorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Advisor'), centerTitle: true),
       body: Column(
         children: [
           Expanded(
@@ -130,12 +129,17 @@ class _AiAdvisorScreenState extends State<AiAdvisorScreen> {
                 Expanded(
                   child: TextField(
                     controller: _input,
-                    decoration: const InputDecoration(hintText: 'Ask your business question...', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      hintText: 'Ask your business question…',
+                    ),
                     onSubmitted: (_) => _send(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filled(onPressed: _send, icon: const Icon(Icons.send)),
+                IconButton.filled(
+                  onPressed: _send,
+                  icon: const Icon(Icons.send_rounded),
+                ),
               ],
             ),
           ),

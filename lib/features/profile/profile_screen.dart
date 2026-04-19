@@ -111,53 +111,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('My Profile'), centerTitle: true),
+      appBar: AppBar(title: const Text('My profile')),
       body: _isLoading && _email == null
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Center(
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 65,
-                          backgroundColor: Colors.blueGrey[50],
-                          backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                          child: _avatarUrl == null ? const Icon(Icons.person, size: 65, color: Colors.grey) : null,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 4,
-                          child: GestureDetector(
-                            onTap: () => _showPickerOptions(),
-                            child: const CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primary,
-                              child: Icon(Icons.add_a_photo, size: 18, color: Colors.white),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 56,
+                                  backgroundColor: AppColors.surfaceSecondary,
+                                  backgroundImage:
+                                      _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                                  child: _avatarUrl == null
+                                      ? Icon(Icons.person_rounded, size: 56, color: Colors.grey.shade500)
+                                      : null,
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 4,
+                                  child: Material(
+                                    color: AppColors.primary,
+                                    shape: const CircleBorder(),
+                                    child: InkWell(
+                                      onTap: _showPickerOptions,
+                                      customBorder: const CircleBorder(),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(10),
+                                        child: Icon(Icons.add_a_photo_rounded, size: 18, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          Text(
+                            _email ?? '',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Text(_email ?? '', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
                   TextField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
                       labelText: 'Username',
-                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.badge_outlined),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: () async {
                         setState(() => _isLoading = true);
                         final r = await _profileService.updateProfile(
@@ -165,6 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                         if (!mounted) return;
                         setState(() => _isLoading = false);
+                        if (!context.mounted) return;
                         if (r.isFailure) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -174,11 +198,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile Saved!')),
+                            const SnackBar(content: Text('Profile saved')),
                           );
                         }
                       },
-                      child: const Text('Save Profile Changes'),
+                      child: const Text('Save changes'),
                     ),
                   ),
                 ],

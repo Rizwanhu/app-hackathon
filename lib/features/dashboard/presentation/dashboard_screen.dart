@@ -147,26 +147,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _quickActions,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_rounded),
             label: const Text('Quick add'),
           ),
           body: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 100),
             children: [
               if (appStore.lastError != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Material(
-                    color: Colors.orange.shade50,
+                    color: AppColors.warningAmber.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(appStore.lastError!, style: const TextStyle(fontSize: 13)),
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: Colors.orange.shade800, size: 20),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              appStore.lastError!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                height: 1.35,
+                                color: Colors.orange.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               if (warn.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Text(
                     'Over 80% of budget: ${warn.join(', ')}',
                     style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.w700),
@@ -187,7 +204,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _showDayDrillDown(bars[i].day);
                 },
               ),
-              const SizedBox(height: 100),
             ],
           ),
         );

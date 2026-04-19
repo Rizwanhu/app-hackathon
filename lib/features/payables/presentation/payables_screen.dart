@@ -4,6 +4,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
 import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../widgets/add_payable_sheet.dart';
 import '../widgets/payable_tile.dart';
 
@@ -36,14 +37,13 @@ class PayablesScreen extends StatelessWidget {
           title: 'Payables',
           floatingActionButton: FloatingActionButton(
             onPressed: () => _openAdd(context),
-            child: const Icon(Icons.add_card),
+            child: const Icon(Icons.add_card_rounded),
           ),
           body: list.isEmpty
-              ? ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(child: Text('No open payables. Tap + to add one.')),
-                  ],
+              ? const EmptyState(
+                  icon: Icons.payments_outlined,
+                  title: 'No open payables',
+                  subtitle: 'Tap + to track what you owe suppliers.',
                 )
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),

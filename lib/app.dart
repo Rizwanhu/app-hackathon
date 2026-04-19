@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'core/constants/app_colors.dart';
 import 'core/data/app_store_scope.dart';
 import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 
 class FlowSenseApp extends StatelessWidget {
   const FlowSenseApp({super.key});
@@ -15,20 +15,10 @@ class FlowSenseApp extends StatelessWidget {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'FlowSense',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-            scaffoldBackgroundColor: AppColors.background,
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
-              brightness: Brightness.dark,
-            ),
-          ),
+          theme: AppEnterpriseTheme.light(),
+          darkTheme: AppEnterpriseTheme.dark(),
           themeMode: appStore.themeMode,
+          scrollBehavior: const AppScrollBehavior(),
           routerConfig: appRouter,
         );
       },

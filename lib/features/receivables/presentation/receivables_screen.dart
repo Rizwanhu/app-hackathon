@@ -4,6 +4,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
 import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../widgets/add_receivable_sheet.dart';
 import '../widgets/receivable_card.dart';
 import '../widgets/receivable_detail_sheet.dart';
@@ -55,14 +56,13 @@ class ReceivablesScreen extends StatelessWidget {
           title: 'Receivables',
           floatingActionButton: FloatingActionButton(
             onPressed: () => _openAdd(context),
-            child: const Icon(Icons.person_add_alt_1),
+            child: const Icon(Icons.person_add_alt_1_rounded),
           ),
           body: list.isEmpty
-              ? ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(child: Text('No receivables yet. Tap + to add one.')),
-                  ],
+              ? const EmptyState(
+                  icon: Icons.groups_outlined,
+                  title: 'No receivables yet',
+                  subtitle: 'Tap + to record money owed by a customer.',
                 )
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),

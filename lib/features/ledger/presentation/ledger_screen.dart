@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../../../core/models/finance_models.dart';
-import '../../../shared/widgets/app_scaffold.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../widgets/transaction_tile.dart';
 
@@ -108,13 +108,19 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
         final cats = _categories(all);
         final list = _filtered(all);
 
-        return AppScaffold(
-          title: 'Ledger',
+        return Scaffold(
           floatingActionButton: FloatingActionButton(
             onPressed: () => _addOrEdit(),
-            child: const Icon(Icons.add),
+            child: const Icon(Icons.add_rounded),
           ),
-          body: Column(
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TabBar(
@@ -169,8 +175,12 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
                   child: list.isEmpty
                       ? ListView(
                           children: const [
-                            SizedBox(height: 120),
-                            Center(child: Text('No transactions match filters.')),
+                            SizedBox(height: 80),
+                            EmptyState(
+                              icon: Icons.receipt_long_rounded,
+                              title: 'No transactions match',
+                              subtitle: 'Adjust filters or add a new entry from +.',
+                            ),
                           ],
                         )
                       : ListView.builder(
@@ -220,6 +230,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
                 ),
               ),
             ],
+          ),
           ),
         );
       },
