@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/profile_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../services/sme_app_services.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Grab the email instantly from the active session
     final user = _profileService.currentUser;
     _email = user?.email;
     _loadUserData();
@@ -46,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- SIMPLE FILE METHOD (Like Hive Project) ---
   Future<void> _pickAndUploadImage(ImageSource source) async {
     final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 50);
@@ -65,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(upload.errorMessage ?? 'Upload failed'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.expenseRed,
               ),
             );
           }
@@ -82,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(saved.errorMessage ?? 'Could not save profile'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.expenseRed,
               ),
             );
           }
@@ -93,14 +92,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: AppColors.incomeGreen,
+            ),
           );
         }
       } catch (e) {
         debugPrint('Upload Error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload Failed: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Upload Failed: $e'), backgroundColor: AppColors.expenseRed),
           );
         }
       } finally {
@@ -112,73 +114,163 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Profile'), centerTitle: true),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text(
+          'My Profile',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            letterSpacing: -0.5,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: _isLoading && _email == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
+                  const SizedBox(height: AppSpacing.md),
+                  // --- PREMIUM AVATAR SECTION ---
                   Center(
                     child: Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 65,
-                          backgroundColor: Colors.blueGrey[50],
-                          backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                          child: _avatarUrl == null ? const Icon(Icons.person, size: 65, color: Colors.grey) : null,
+                        Container(
+                          padding: const EdgeInsets.all(4), // Border gap
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 65,
+                            backgroundColor: AppColors.surfaceSecondary,
+                            backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                            child: _avatarUrl == null
+                                ? const Icon(Icons.person_rounded, size: 65, color: AppColors.textMuted)
+                                : null,
+                          ),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 4,
                           child: GestureDetector(
-                            onTap: () => _showPickerOptions(),
-                            child: const CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primary,
-                              child: Icon(Icons.add_a_photo, size: 18, color: Colors.white),
+                            onTap: _showPickerOptions,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.surface, width: 3),
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, size: 18, color: Colors.white),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Text(_email ?? '', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                  const SizedBox(height: 30),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
+                  const SizedBox(height: AppSpacing.lg),
+                  
+                  // --- EMAIL BADGE ---
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.email_rounded, size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
+                        Text(
+                          _email ?? 'Loading email...',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        setState(() => _isLoading = true);
-                        final r = await _profileService.updateProfile(
-                          username: _usernameController.text.trim(),
-                        );
-                        if (!mounted) return;
-                        setState(() => _isLoading = false);
-                        if (r.isFailure) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(r.errorMessage ?? 'Save failed'),
-                              backgroundColor: Colors.red,
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // --- FORM SECTION ---
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _usernameController,
+                          decoration: InputDecoration(
+                            labelText: 'Username',
+                            prefixIcon: const Icon(Icons.person_outline_rounded),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: FilledButton.icon(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    setState(() => _isLoading = true);
+                                    final r = await _profileService.updateProfile(
+                                      username: _usernameController.text.trim(),
+                                    );
+                                    if (!mounted) return;
+                                    setState(() => _isLoading = false);
+                                    if (r.isFailure) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(r.errorMessage ?? 'Save failed'),
+                                          backgroundColor: AppColors.expenseRed,
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Profile Saved Successfully!'),
+                                          backgroundColor: AppColors.incomeGreen,
+                                        ),
+                                      );
+                                    }
+                                  },
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.check_circle_outline_rounded),
+                            label: Text(_isLoading ? 'Saving...' : 'Save Profile Changes', 
+                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile Saved!')),
-                          );
-                        }
-                      },
-                      child: const Text('Save Profile Changes'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -190,21 +282,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showPickerOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.gallery); },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
-              onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.camera); },
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Wrap(
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text('Update Profile Picture', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                ),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.gallery); },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                ),
+                title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () { Navigator.pop(ctx); _pickAndUploadImage(ImageSource.camera); },
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -20,7 +20,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 900), _routeNext);
+    // Time thora barhaya hai taakay animation proper feel ho
+    _timer = Timer(const Duration(milliseconds: 2000), _routeNext);
   }
 
   void _routeNext() {
@@ -39,40 +40,78 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: 64,
-                width: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(16),
+        // Entrance Animation ka jadoo
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeOutBack, // Bouncing effect
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Opacity(
+                opacity: value.clamp(0.0, 1.0),
+                child: child,
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Premium Box Logo with Shadow
+                Container(
+                  height: 80, // Thora bara kiya hai
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 24,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.show_chart_rounded, color: Colors.white, size: 40),
                 ),
-                child: const Icon(Icons.show_chart, color: Colors.white, size: 34),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'FlowSense',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  'FlowSense',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'SME Cash Flow Intelligence',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5, // Sleek spacing
+                      ),
+                ),
+                const SizedBox(height: 40),
+                // Subtle Loading Indicator
+                SizedBox(
+                  width: 60,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: const LinearProgressIndicator(
+                      minHeight: 4,
+                      backgroundColor: AppColors.borderLight,
+                      color: AppColors.primary,
                     ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'SME Cash Flow Intelligence',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-

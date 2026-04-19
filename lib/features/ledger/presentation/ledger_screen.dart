@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
 import '../../../core/models/finance_models.dart';
@@ -37,7 +38,6 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
   }
 
   List<CashTransaction> _filtered(List<CashTransaction> all) {
-    // `appStore.transactions` is unmodifiable; always work on a mutable copy.
     var list = all.toList();
     final tab = _tabs.index;
     if (tab == 1) {
@@ -78,6 +78,18 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
       firstDate: DateTime(now.year - 2),
       lastDate: DateTime(now.year + 2),
       initialDateRange: _range ?? DateTimeRange(start: now.subtract(const Duration(days: 30)), end: now),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) setState(() => _range = picked);
   }
@@ -86,6 +98,8 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
     final tx = await showModalBottomSheet<CashTransaction>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       showDragHandle: true,
       builder: (_) => AddTransactionSheet(existing: existing),
     );
@@ -95,7 +109,9 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
         : await appStore.updateTransaction(tx.id, tx);
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+      );
     }
   }
 
@@ -110,109 +126,188 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
 
         return AppScaffold(
           title: 'Ledger',
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _addOrEdit(),
-            child: const Icon(Icons.add),
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add Log', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TabBar(
-                controller: _tabs,
-                tabs: const [
-                  Tab(text: 'All'),
-                  Tab(text: 'Income'),
-                  Tab(text: 'Expenses'),
-                ],
+              // --- PREMIUM TAB BAR ---
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: TabBar(
+                  controller: _tabs,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primary,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  indicatorWeight: 3,
+                  tabs: const [
+                    Tab(text: 'All'),
+                    Tab(text: 'Income'),
+                    Tab(text: 'Expenses'),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
+
+              // --- SEARCH BAR ---
               TextField(
                 controller: _contactQ,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Search contact…',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
+                  hintText: 'Search contact or vendor...',
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _pickRange,
-                    icon: const Icon(Icons.date_range),
-                    label: Text(_range == null ? 'Date range' : 'Filter: range set'),
-                  ),
-                  if (_range != null)
-                    TextButton(
-                      onPressed: () => setState(() => _range = null),
-                      child: const Text('Clear range'),
+
+              // --- FILTERS ---
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
+                    ActionChip(
+                      onPressed: _pickRange,
+                      backgroundColor: _range == null ? AppColors.surface : AppColors.primary.withOpacity(0.1),
+                      side: BorderSide(color: _range == null ? AppColors.borderLight : AppColors.primary),
+                      avatar: Icon(Icons.date_range_rounded, size: 16, color: _range == null ? AppColors.textSecondary : AppColors.primary),
+                      label: Text(
+                        _range == null ? 'Date Range' : 'Filtered',
+                        style: TextStyle(color: _range == null ? AppColors.textSecondary : AppColors.primary, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  DropdownButton<String?>(
-                    value: _categoryFilter,
-                    hint: const Text('Category'),
-                    items: [
-                      const DropdownMenuItem<String?>(value: null, child: Text('All categories')),
-                      ...cats.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+                    if (_range != null) ...[
+                      const SizedBox(width: 8),
+                      ActionChip(
+                        onPressed: () => setState(() => _range = null),
+                        backgroundColor: AppColors.surfaceSecondary,
+                        side: const BorderSide(color: AppColors.borderLight),
+                        label: const Text('Clear', style: TextStyle(fontSize: 12)),
+                      ),
                     ],
-                    onChanged: (v) => setState(() => _categoryFilter = v),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Container(
+                      height: 32,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: _categoryFilter,
+                          hint: const Text('Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                          items: [
+                            const DropdownMenuItem<String?>(value: null, child: Text('All Categories')),
+                            ...cats.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+                          ],
+                          onChanged: (v) => setState(() => _categoryFilter = v),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
+
+              // --- LIST VIEW ---
               Expanded(
                 child: RefreshIndicator(
+                  color: AppColors.primary,
                   onRefresh: () => appStore.refresh(),
                   child: list.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Center(child: Text('No transactions match filters.')),
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          children: [
+                            const SizedBox(height: 80),
+                            Center(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.05),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.textMuted),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text('No transactions found.', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ),
                           ],
                         )
                       : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.only(bottom: 100),
                           itemCount: list.length,
                           itemBuilder: (context, i) {
                             final t = list[i];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: Dismissible(
-                                key: ValueKey(t.id),
-                                direction: DismissDirection.horizontal,
-                                background: Container(
-                                  alignment: Alignment.centerLeft,
-                                  padding: const EdgeInsets.only(left: 18),
-                                  color: Colors.blue.shade100,
-                                  child: const Icon(Icons.edit),
-                                ),
-                                secondaryBackground: Container(
-                                  alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.only(right: 18),
-                                  color: Colors.red.shade100,
-                                  child: const Icon(Icons.delete),
-                                ),
-                                confirmDismiss: (dir) async {
-                                  if (dir == DismissDirection.startToEnd) {
-                                    await _addOrEdit(t);
-                                    return false;
-                                  }
-                                  if (dir == DismissDirection.endToStart) {
-                                    final err = await appStore.deleteTransaction(t.id);
-                                    if (!context.mounted) return false;
-                                    if (err != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(err)),
-                                      );
-                                      return false;
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16), // Prevents background bleeding
+                                child: Dismissible(
+                                  key: ValueKey(t.id),
+                                  direction: DismissDirection.horizontal,
+                                  background: Container(
+                                    alignment: Alignment.centerLeft,
+                                    padding: const EdgeInsets.only(left: 24),
+                                    color: AppColors.infoBlue.withOpacity(0.15),
+                                    child: const Icon(Icons.edit_rounded, color: AppColors.infoBlue),
+                                  ),
+                                  secondaryBackground: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 24),
+                                    color: AppColors.expenseRed.withOpacity(0.15),
+                                    child: const Icon(Icons.delete_rounded, color: AppColors.expenseRed),
+                                  ),
+                                  confirmDismiss: (dir) async {
+                                    if (dir == DismissDirection.startToEnd) {
+                                      await _addOrEdit(t);
+                                      return false; // Don't dismiss, just edit
                                     }
-                                    return true;
-                                  }
-                                  return false;
-                                },
-                                child: TransactionTile(tx: t, onTap: () => _addOrEdit(t)),
+                                    if (dir == DismissDirection.endToStart) {
+                                      final err = await appStore.deleteTransaction(t.id);
+                                      if (!context.mounted) return false;
+                                      if (err != null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+                                        );
+                                        return false;
+                                      }
+                                      return true;
+                                    }
+                                    return false;
+                                  },
+                                  child: TransactionTile(tx: t, onTap: () => _addOrEdit(t)),
+                                ),
                               ),
                             );
                           },

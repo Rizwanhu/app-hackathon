@@ -11,31 +11,61 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isUser ? AppColors.primary : AppColors.surfaceSecondary;
+    final bg = isUser ? AppColors.primary : AppColors.surface;
     final fg = isUser ? Colors.white : AppColors.textPrimary;
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: Radius.circular(isUser ? 16 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 16),
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) ...[
+            // --- AI AVATAR ---
+            Container(
+              width: 28,
+              height: 28,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.primary),
             ),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Text(
-              text,
-              style: TextStyle(color: fg, height: 1.35, fontWeight: FontWeight.w600),
+          ],
+          Flexible(
+            child: ConstrainedBox(
+              // Maximum width screen ke hisab se adjust hogi
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: bg,
+                  // Halka sa shadow for depth
+                  boxShadow: isUser
+                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
+                      : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4))],
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(isUser ? 20 : 4),
+                    bottomRight: Radius.circular(isUser ? 4 : 20),
+                  ),
+                  border: isUser ? null : Border.all(color: AppColors.borderLight),
+                ),
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    color: fg,
+                    height: 1.4,
+                    fontSize: 14,
+                    fontWeight: isUser ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

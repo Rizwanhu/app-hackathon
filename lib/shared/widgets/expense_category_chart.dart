@@ -11,23 +11,37 @@ class ExpenseCategoryChart extends StatelessWidget {
 
   static const _palette = [
     AppColors.primary,
-    AppColors.infoBlue,
     AppColors.warningAmber,
+    AppColors.infoBlue,
     AppColors.expenseRed,
-    AppColors.incomeGreen,
     AppColors.accent,
+    AppColors.primaryLight,
   ];
 
   @override
   Widget build(BuildContext context) {
     final entries = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+      
     if (entries.isEmpty) {
-      return Text(
-        'No expense categories yet this month.',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.pie_chart_outline_rounded, size: 48, color: AppColors.borderLight),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'No expenses recorded yet.',
+              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
             ),
+          ],
+        ),
       );
     }
 
@@ -36,83 +50,99 @@ class ExpenseCategoryChart extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Expense breakdown',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            SizedBox(
-              height: 160,
-              width: 160,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 44,
-                  sections: List.generate(entries.length, (i) {
-                    final e = entries[i];
-                    final pct = e.value / total;
-                    return PieChartSectionData(
-                      value: e.value,
-                      title: '${(pct * 100).toStringAsFixed(0)}%',
-                      color: _palette[i % _palette.length],
-                      radius: 52,
-                      titleStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    );
-                  }),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Expense Breakdown',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              SizedBox(
+                height: 140,
+                width: 140,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 4, // Thora zyada space clean look ke liye
+                    centerSpaceRadius: 35, // Doughnut style
+                    sections: List.generate(entries.length, (i) {
+                      final e = entries[i];
+                      final pct = e.value / total;
+                      return PieChartSectionData(
+                        value: e.value,
+                        title: '${(pct * 100).toStringAsFixed(0)}%',
+                        color: _palette[i % _palette.length],
+                        radius: 40,
+                        titleStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      );
+                    }),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: entries.take(6).map((e) {
-                  final i = entries.indexOf(e);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _palette[i % _palette.length],
-                            borderRadius: BorderRadius.circular(3),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: entries.take(5).map((e) {
+                    final i = entries.indexOf(e);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: _palette[i % _palette.length],
+                              shape: BoxShape.circle, // Circle color indicator
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            e.key,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              e.key,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, 
+                                  color: AppColors.textSecondary,
+                                  fontSize: 13),
+                            ),
                           ),
-                        ),
-                        Text(
-                          e.value.toStringAsFixed(0),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                          Text(
+                            e.value.toStringAsFixed(0),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800, 
+                                color: AppColors.textPrimary,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

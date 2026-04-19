@@ -17,7 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _password = TextEditingController();
   final _username = TextEditingController();
   final _authService = AuthService();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   Future<void> _handleSignUp() async {
   try {

@@ -47,58 +47,60 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- THE APPBAR LIVES HERE NOW ---
+      backgroundColor: AppColors.background,
+      
+      // --- PREMIUM APPBAR ---
       appBar: AppBar(
-        title: Text(_getTitle()),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          _getTitle(),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            letterSpacing: -0.5,
+          ),
+        ),
         centerTitle: true,
-        // The 3-line menu icon will appear here automatically because of 'drawer' below
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
 
-      // --- THE DRAWER (3-line menu) ---
+      // --- MODERN DRAWER ---
       drawer: Drawer(
+        backgroundColor: AppColors.surface,
         child: Column(
           children: [
-            const UserAccountsDrawerHeader(
-              decoration: BoxDecoration(color: AppColors.primary),
-              accountName: Text("SME Owner"),
-              accountEmail: Text("owner@business.com"),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: AppColors.primary),
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: AppColors.primary),
+              accountName: const Text("SME Owner", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              accountEmail: const Text("owner@business.com"),
+              currentAccountPicture: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)
+                  ],
+                ),
+                child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 36),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('My Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/app/dashboard/profile');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.call_received),
-              title: const Text('Receivables'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/app/dashboard/receivables');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.call_made),
-              title: const Text('Payables'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/app/dashboard/payables');
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/app/dashboard/settings');
-              },
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerTile(context, Icons.person_outline, 'My Profile', '/app/dashboard/profile'),
+                  _buildDrawerTile(context, Icons.call_received_rounded, 'Receivables', '/app/dashboard/receivables'),
+                  _buildDrawerTile(context, Icons.call_made_rounded, 'Payables', '/app/dashboard/payables'),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(height: 32, color: AppColors.borderLight),
+                  ),
+                  _buildDrawerTile(context, Icons.settings_outlined, 'Settings', '/app/dashboard/settings'),
+                ],
+              ),
             ),
           ],
         ),
@@ -108,6 +110,7 @@ class _AppShellState extends State<AppShell> {
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
+        physics: const BouncingScrollPhysics(), // Modern iOS like bounce
         children: const [
           DashboardScreen(),
           LedgerScreen(),
@@ -115,16 +118,76 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
 
-      // --- BOTTOM NAVIGATION ---
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onBottomNavTapped,
-        selectedItemColor: AppColors.primary,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: 'Ledger'),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI Advisor'),
+      // --- PREMIUM BOTTOM NAVIGATION ---
+      bottomNavigationBar: _buildPremiumNavBar(),
+    );
+  }
+
+  // Helper method Drawer ke items ke liye
+  Widget _buildDrawerTile(BuildContext context, IconData icon, String title, String route) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.textSecondary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      onTap: () {
+        Navigator.pop(context); // Drawer close karo
+        context.push(route);    // Nayi screen par jao
+      },
+    );
+  }
+
+  // Helper method Bottom Bar ke liye
+  Widget _buildPremiumNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
         ],
+      ),
+      child: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          backgroundColor: AppColors.surface,
+          indicatorColor: AppColors.primary.withOpacity(0.15),
+          labelTextStyle: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary);
+            }
+            return const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary);
+          }),
+          iconTheme: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return const IconThemeData(color: AppColors.primary, size: 26);
+            }
+            return const IconThemeData(color: AppColors.textSecondary, size: 24);
+          }),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: _onBottomNavTapped,
+          height: 70,
+          elevation: 0,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+              label: 'Ledger',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined),
+              selectedIcon: Icon(Icons.auto_awesome_rounded),
+              label: 'AI Advisor',
+            ),
+          ],
+        ),
       ),
     );
   }

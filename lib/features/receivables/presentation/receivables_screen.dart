@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/data/app_store_scope.dart';
 import '../../../core/models/finance_models.dart';
@@ -15,6 +16,10 @@ class ReceivablesScreen extends StatelessWidget {
     final r = await showModalBottomSheet<Receivable>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (_) => const AddReceivableSheet(),
     );
@@ -22,7 +27,9 @@ class ReceivablesScreen extends StatelessWidget {
     final err = await appStore.addReceivable(r);
     if (!context.mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.expenseRed),
+      );
     }
   }
 
@@ -30,6 +37,10 @@ class ReceivablesScreen extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       showDragHandle: true,
       builder: (_) => DraggableScrollableSheet(
         expand: false,
@@ -38,6 +49,7 @@ class ReceivablesScreen extends StatelessWidget {
         minChildSize: 0.45,
         builder: (context, scrollController) => SingleChildScrollView(
           controller: scrollController,
+          physics: const BouncingScrollPhysics(),
           child: ReceivableDetailSheet(receivableId: id),
         ),
       ),
@@ -53,19 +65,56 @@ class ReceivablesScreen extends StatelessWidget {
 
         return AppScaffold(
           title: 'Receivables',
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openAdd(context),
-            child: const Icon(Icons.person_add_alt_1),
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            label: const Text('Add New', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           body: list.isEmpty
-              ? ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(child: Text('No receivables yet. Tap + to add one.')),
-                  ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.people_outline_rounded,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      const Text(
+                        'No Receivables Yet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const Text(
+                        'Track money owed to your business.\nTap "Add New" to get started.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 80), // Thora upar rakhne ke liye
+                    ],
+                  ),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 88),
+                  padding: const EdgeInsets.only(bottom: 100), // FAB ke liye jagah
+                  physics: const BouncingScrollPhysics(),
                   itemCount: list.length,
                   separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, i) {
