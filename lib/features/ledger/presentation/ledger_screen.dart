@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
-import '../../../core/mock/mock_scope.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/data/app_store_scope.dart';
+import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../widgets/transaction_tile.dart';
@@ -37,7 +37,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
   }
 
   List<CashTransaction> _filtered(List<CashTransaction> all) {
-    // `mockStore.transactions` may be unmodifiable; always work on a mutable copy.
+    // `appStore.transactions` is unmodifiable; always work on a mutable copy.
     var list = all.toList();
     final tab = _tabs.index;
     if (tab == 1) {
@@ -89,20 +89,22 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
       showDragHandle: true,
       builder: (_) => AddTransactionSheet(existing: existing),
     );
-    if (tx == null) return;
-    if (existing == null) {
-      mockStore.addTransaction(tx);
-    } else {
-      mockStore.updateTransaction(tx.id, tx);
+    if (tx == null || !mounted) return;
+    final err = existing == null
+        ? await appStore.addTransaction(tx)
+        : await appStore.updateTransaction(tx.id, tx);
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: mockStore,
+      animation: appStore,
       builder: (context, _) {
-        final all = mockStore.transactions;
+        final all = appStore.transactions;
         final cats = _categories(all);
         final list = _filtered(all);
 
@@ -163,9 +165,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
               const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () async {
-                    await Future<void>.delayed(const Duration(milliseconds: 450));
-                  },
+                  onRefresh: () => appStore.refresh(),
                   child: list.isEmpty
                       ? ListView(
                           children: const [
@@ -200,7 +200,14 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
                                     return false;
                                   }
                                   if (dir == DismissDirection.endToStart) {
-                                    mockStore.deleteTransaction(t.id);
+                                    final err = await appStore.deleteTransaction(t.id);
+                                    if (!context.mounted) return false;
+                                    if (err != null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(err)),
+                                      );
+                                      return false;
+                                    }
                                     return true;
                                   }
                                   return false;

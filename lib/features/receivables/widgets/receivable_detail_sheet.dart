@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/extensions/currency_extension.dart';
-import '../../../core/mock/mock_scope.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/data/app_store_scope.dart';
+import '../../../core/models/finance_models.dart';
 import '../../../core/services/whatsapp_service.dart';
 import 'risk_badge.dart';
 
@@ -27,7 +27,7 @@ class _ReceivableDetailSheetState extends State<ReceivableDetailSheet> {
   }
 
   Receivable? _find() {
-    for (final r in mockStore.receivables) {
+    for (final r in appStore.receivables) {
       if (r.id == widget.receivableId) return r;
     }
     return null;
@@ -41,7 +41,7 @@ class _ReceivableDetailSheetState extends State<ReceivableDetailSheet> {
     return 'Assalam o Alaikum $name,\n\n'
         'Quick reminder: $amt from the invoice dated $due is still pending ($overdue).\n\n'
         'Please let us know when we can expect payment.\n\n'
-        '— ${mockStore.profile.businessName}';
+        '— ${appStore.profile.businessName}';
   }
 
   Future<void> _openWhatsApp(Receivable r) async {
@@ -60,7 +60,7 @@ class _ReceivableDetailSheetState extends State<ReceivableDetailSheet> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: mockStore,
+      animation: appStore,
       builder: (context, _) {
         final r = _find();
         if (r == null) {
@@ -99,9 +99,13 @@ class _ReceivableDetailSheetState extends State<ReceivableDetailSheet> {
                 items: ReceivableStatus.values
                     .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
                     .toList(),
-                onChanged: (v) {
+                onChanged: (v) async {
                   if (v == null) return;
-                  mockStore.updateReceivableStatus(r.id, v);
+                  final err = await appStore.updateReceivableStatus(r.id, v);
+                  if (!context.mounted) return;
+                  if (err != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                  }
                 },
               ),
               const SizedBox(height: AppSpacing.md),
@@ -136,11 +140,15 @@ class _ReceivableDetailSheetState extends State<ReceivableDetailSheet> {
               ),
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton(
-                onPressed: () {
+                onPressed: () async {
                   final note = _followUpNote.text.trim();
                   if (note.isEmpty) return;
-                  mockStore.addReceivableFollowUp(r.id, note);
+                  final err = await appStore.addReceivableFollowUp(r.id, note);
                   _followUpNote.clear();
+                  if (!context.mounted) return;
+                  if (err != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                  }
                 },
                 child: const Text('Save note'),
               ),

@@ -1,24 +1,50 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
-import '../../../core/mock/mock_scope.dart';
+import '../../../core/data/app_store_scope.dart';
+import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../widgets/add_payable_sheet.dart';
 import '../widgets/payable_tile.dart';
 
 class PayablesScreen extends StatelessWidget {
   const PayablesScreen({super.key});
 
+  Future<void> _openAdd(BuildContext context) async {
+    final p = await showModalBottomSheet<Payable>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => const AddPayableSheet(),
+    );
+    if (p == null || !context.mounted) return;
+    final err = await appStore.addPayable(p);
+    if (!context.mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: mockStore,
+      animation: appStore,
       builder: (context, _) {
-        final list = mockStore.sortedPayablesOpen();
+        final list = appStore.sortedPayablesOpen();
 
         return AppScaffold(
           title: 'Payables',
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _openAdd(context),
+            child: const Icon(Icons.add_card),
+          ),
           body: list.isEmpty
-              ? const Center(child: Text('No open payables. Great job!'))
+              ? ListView(
+                  children: const [
+                    SizedBox(height: 120),
+                    Center(child: Text('No open payables. Tap + to add one.')),
+                  ],
+                )
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),
                   itemCount: list.length,
@@ -27,11 +53,18 @@ class PayablesScreen extends StatelessWidget {
                     final p = list[i];
                     return PayableTile(
                       p: p,
-                      onMarkPaid: () => mockStore.markPayablePaid(p.id),
+                      onMarkPaid: () {
+                        appStore.markPayablePaid(p.id).then((err) {
+                          if (!context.mounted) return;
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                          }
+                        });
+                      },
                       onReminderChanged: (v) {
                         if (v == p.reminderEnabled) return;
-                        mockStore.togglePayableReminder(p.id);
-                        if (v && mockStore.notificationsEnabled) {
+                        appStore.togglePayableReminder(p.id);
+                        if (v && appStore.notificationsEnabled) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

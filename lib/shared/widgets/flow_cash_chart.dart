@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
-import '../../core/mock/mock_store.dart';
+import '../../core/models/finance_models.dart';
 
 class FlowCashChart extends StatelessWidget {
   final ChartPeriod period;

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../core/auth/auth_scope.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../core/mock/mock_scope.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/data/app_store_scope.dart';
+import '../../../core/models/finance_models.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -24,8 +23,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _bizName.text = mockStore.profile.businessName;
-    _industry.text = mockStore.profile.industry;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await appStore.refresh();
+      if (!mounted) return;
+      setState(() {
+        _bizName.text = appStore.profile.businessName;
+        _industry.text = appStore.profile.industry;
+      });
+    });
   }
 
   @override
@@ -35,23 +40,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  void _saveProfile() {
-    mockStore.updateProfile(
-      BusinessProfile(
-        businessName: _bizName.text.trim().isEmpty ? 'My business' : _bizName.text.trim(),
-        industry: _industry.text.trim().isEmpty ? 'General' : _industry.text.trim(),
-        currency: mockStore.profile.currency,
-      ),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile saved (local demo).')),
-    );
+  Future<void> _saveProfile() async {
+    final err = await appStore.persistBusinessProfile(_bizName.text, _industry.text);
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Business profile saved.')),
+      );
+    }
   }
 
   String _csvExport() {
     final buf = StringBuffer('type,amount,category,contact,date,note\n');
     final fmt = DateFormat('yyyy-MM-dd');
-    for (final t in mockStore.transactions) {
+    for (final t in appStore.transactions) {
       final type = t.type == TransactionType.income ? 'income' : 'expense';
       buf.writeln(
         '$type,${t.amount},${t.category},${_escape(t.contactName)},${fmt.format(t.date)},${_escape(t.note)}',
@@ -70,9 +74,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: mockStore,
+      animation: appStore,
       builder: (context, _) {
-        final user = Supabase.instance.client.auth.currentUser;
+        final user =
+            SupabaseService.isInitialized ? SupabaseService.client.auth.currentUser : null;
         return AppScaffold(
           title: 'Settings',
           body: ListView(
@@ -147,7 +152,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: AppSpacing.md),
-              ...mockStore.categoryBudgets.entries.map((e) {
+              if (!appStore.hasSavedBudgets)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Text(
+                    'No budget row exists in Supabase yet. A budget record is created when you move any slider and save a value for the current month.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ...appStore.categoryBudgets.entries.map((e) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                   child: Column(
@@ -173,7 +186,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         max: 500000,
                         divisions: 99,
                         label: e.value.toStringAsFixed(0),
-                        onChanged: (v) => mockStore.setBudget(e.key, v),
+                        onChanged: (v) {
+                          appStore.setBudget(e.key, v).then((err) {
+                            if (!context.mounted) return;
+                            if (err != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                            }
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -186,14 +206,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               SwitchListTile(
-                value: mockStore.notificationsEnabled,
-                onChanged: (v) => mockStore.setNotifications(v),
+                value: appStore.notificationsEnabled,
+                onChanged: (v) => appStore.setNotifications(v),
                 title: const Text('Notifications'),
                 subtitle: const Text('Payable reminders & daily summary (demo)'),
               ),
               SwitchListTile(
-                value: mockStore.biometricLockEnabled,
-                onChanged: (v) => mockStore.setBiometricLock(v),
+                value: appStore.biometricLockEnabled,
+                onChanged: (v) => appStore.setBiometricLock(v),
                 title: const Text('Biometric lock'),
                 subtitle: const Text('Simulated — no real device auth yet'),
               ),
@@ -204,8 +224,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
                   ButtonSegment(value: ThemeMode.system, label: Text('System')),
                 ],
-                selected: {mockStore.themeMode},
-                onSelectionChanged: (s) => mockStore.updateThemeMode(s.first),
+                selected: {appStore.themeMode},
+                onSelectionChanged: (s) => appStore.updateThemeMode(s.first),
               ),
               const SizedBox(height: AppSpacing.xl),
               OutlinedButton.icon(
@@ -228,9 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               OutlinedButton(
                 onPressed: () async {
                   try {
-                    await Supabase.instance.client.auth.signOut();
+                    if (SupabaseService.isInitialized) {
+                      await SupabaseService.client.auth.signOut();
+                    }
                   } catch (_) {
-                    // Fallback for UI-only / non-supabase runs.
                     authNotifier.setMockLoggedIn(false);
                   }
                   if (!context.mounted) return;

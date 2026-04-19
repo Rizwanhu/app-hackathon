@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/constants/app_colors.dart';
-import 'core/mock/mock_scope.dart';
+import 'core/data/app_store_scope.dart';
 import 'core/router/app_router.dart';
 
 class FlowSenseApp extends StatelessWidget {
@@ -10,7 +10,7 @@ class FlowSenseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: mockStore,
+      listenable: appStore,
       builder: (context, _) {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
@@ -28,11 +28,10 @@ class FlowSenseApp extends StatelessWidget {
               brightness: Brightness.dark,
             ),
           ),
-          themeMode: mockStore.themeMode,
+          themeMode: appStore.themeMode,
           routerConfig: appRouter,
         );
       },
     );
   }
 }
-

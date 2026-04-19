@@ -4,23 +4,21 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/models/finance_models.dart';
 
-class AddReceivableSheet extends StatefulWidget {
-  const AddReceivableSheet({super.key});
+class AddPayableSheet extends StatefulWidget {
+  const AddPayableSheet({super.key});
 
   @override
-  State<AddReceivableSheet> createState() => _AddReceivableSheetState();
+  State<AddPayableSheet> createState() => _AddPayableSheetState();
 }
 
-class _AddReceivableSheetState extends State<AddReceivableSheet> {
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
+class _AddPayableSheetState extends State<AddPayableSheet> {
+  final _vendor = TextEditingController();
   final _amount = TextEditingController();
   DateTime _due = DateTime.now().add(const Duration(days: 7));
 
   @override
   void dispose() {
-    _name.dispose();
-    _phone.dispose();
+    _vendor.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -38,23 +36,21 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
   void _save() {
     final raw = _amount.text.trim().replaceAll(',', '');
     final value = double.tryParse(raw);
-    if (_name.text.trim().isEmpty || value == null || value <= 0) {
+    if (_vendor.text.trim().isEmpty || value == null || value <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter name and a valid amount.')),
+        const SnackBar(content: Text('Enter vendor name and a valid amount.')),
       );
       return;
     }
-    final r = Receivable(
-      id: 'r_${DateTime.now().microsecondsSinceEpoch}',
-      contactName: _name.text.trim(),
-      phoneNumber: _phone.text.trim().replaceAll(RegExp(r'[^\d]'), ''),
+    final p = Payable(
+      id: 'p_${DateTime.now().microsecondsSinceEpoch}',
+      vendorName: _vendor.text.trim(),
       amount: value,
       dueDate: _due,
-      status: ReceivableStatus.pending,
-      riskScore: 55,
-      followUps: const [],
+      reminderEnabled: false,
+      isPaid: false,
     );
-    Navigator.of(context).pop(r);
+    Navigator.of(context).pop(p);
   }
 
   @override
@@ -74,7 +70,7 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
             Row(
               children: [
                 Text(
-                  'Add receivable',
+                  'Add payable',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const Spacer(),
@@ -83,19 +79,9 @@ class _AddReceivableSheetState extends State<AddReceivableSheet> {
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
-              controller: _name,
+              controller: _vendor,
               decoration: const InputDecoration(
-                labelText: 'Customer name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'WhatsApp number',
-                hintText: '92300xxxxxxx',
+                labelText: 'Vendor / supplier',
                 border: OutlineInputBorder(),
               ),
             ),

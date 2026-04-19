@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/extensions/currency_extension.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/models/finance_models.dart';
 
 class TransactionTile extends StatelessWidget {
   final CashTransaction tx;

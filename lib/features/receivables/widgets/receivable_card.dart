@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/extensions/currency_extension.dart';
-import '../../../core/mock/mock_store.dart';
+import '../../../core/models/finance_models.dart';
 import 'risk_badge.dart';
 
 class ReceivableCard extends StatelessWidget {

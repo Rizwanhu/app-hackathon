@@ -4,7 +4,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/extensions/currency_extension.dart';
-import '../../../core/mock/mock_scope.dart';
+import '../../../core/data/app_store_scope.dart';
 import '../widgets/chat_bubble.dart';
 
 class _ChatItem {
@@ -74,7 +74,7 @@ class _AiAdvisorScreenState extends State<AiAdvisorScreen> {
     _scrollBottom();
 
     try {
-      final s = mockStore;
+      final s = appStore;
       final prompt = '''
         Context: Small Business Financial Data
         - Net Cash: ${s.netCash.toPkr()}
