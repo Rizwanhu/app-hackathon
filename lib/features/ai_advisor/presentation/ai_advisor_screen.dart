@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -35,11 +36,12 @@ class _AiAdvisorScreenState extends State<AiAdvisorScreen> {
   void initState() {
     super.initState();
     // Fetch key from environment
-    _apiKey = dotenv.env['GEMINI_API_KEY'];
-    
+    _apiKey = dotenv.env['GEMINI_API_KEY']?.trim();
+
     if (_apiKey != null && _apiKey!.isNotEmpty) {
+      // Use a current model id (Gemini 1.5 Flash was retired; see https://ai.google.dev/gemini-api/docs/models )
       _model = GenerativeModel(
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         apiKey: _apiKey!,
       );
     }
@@ -94,10 +96,14 @@ class _AiAdvisorScreenState extends State<AiAdvisorScreen> {
           _isTyping = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Gemini error: $e\n$st');
       if (mounted) {
+        final msg = kDebugMode
+            ? 'Request failed: $e'
+            : 'Could not reach Gemini. Check internet, API key in .env, quota on Google AI Studio, and that your key allows this app (web may need HTTP referrer restrictions).';
         setState(() {
-          _items.add(const _ChatItem(isUser: false, text: "Connection failed. Please check your internet or API key quota."));
+          _items.add(_ChatItem(isUser: false, text: msg));
           _isTyping = false;
         });
       }

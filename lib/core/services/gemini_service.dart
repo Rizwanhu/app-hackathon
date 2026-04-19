@@ -14,7 +14,7 @@ class GeminiService {
 
     try {
       final model = GenerativeModel(
-        model: 'gemini-1.5-flash', // Using Flash for hackathon speed
+        model: 'gemini-3-flash-preview', // Using Flash for hackathon speed
         apiKey: dotenv.env['GEMINI_API_KEY']!,
         generationConfig: GenerationConfig(
           temperature: 0.7,
